@@ -2,24 +2,32 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Meu Jogo Scratch com Cronômetro</title>
+  <title>Jogo Matemática com Cronômetro</title>
   <style>
     #timer {
       font-size: 2em;
-      margin-bottom: 20px;
+      margin: 10px 0;
+    }
+    input, button {
+      font-size: 1em;
+      margin: 5px;
     }
   </style>
 </head>
 <body>
-  <h1>Meu Jogo Scratch com Cronômetro</h1>
-  
+  <h1>Jogo Matemática</h1>
+
+  <label for="playerName">Seu nome:</label>
+  <input type="text" id="playerName" placeholder="Digite seu nome" />
+
   <div id="timer">Tempo: 0 segundos</div>
-  
+
   <button id="startBtn">Começar</button>
   <button id="resetBtn" disabled>Reiniciar</button>
-  
-  <br /><br />
-  
+  <button id="finishBtn" disabled>Finalizar</button>
+
+  <br><br>
+
   <iframe
     src="https://scratch.mit.edu/projects/1202806275/embed"
     allowtransparency="true"
@@ -29,25 +37,32 @@
     scrolling="no"
     allowfullscreen>
   </iframe>
-  
+
   <script>
-    let timerDiv = document.getElementById('timer');
-    let startBtn = document.getElementById('startBtn');
-    let resetBtn = document.getElementById('resetBtn');
-    
     let time = 0;
     let interval = null;
-    
+
+    const timerDiv = document.getElementById('timer');
+    const startBtn = document.getElementById('startBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const finishBtn = document.getElementById('finishBtn');
+    const playerName = document.getElementById('playerName');
+
     startBtn.addEventListener('click', () => {
-      if (interval) return; // já tá rodando
+      if (!playerName.value.trim()) {
+        alert("Digite seu nome antes de começar!");
+        return;
+      }
+      if (interval) return;
       interval = setInterval(() => {
         time++;
         timerDiv.textContent = 'Tempo: ' + time + ' segundos';
       }, 1000);
       startBtn.disabled = true;
       resetBtn.disabled = false;
+      finishBtn.disabled = false;
     });
-    
+
     resetBtn.addEventListener('click', () => {
       clearInterval(interval);
       interval = null;
@@ -55,6 +70,36 @@
       timerDiv.textContent = 'Tempo: 0 segundos';
       startBtn.disabled = false;
       resetBtn.disabled = true;
+      finishBtn.disabled = true;
+    });
+
+    finishBtn.addEventListener('click', () => {
+      clearInterval(interval);
+      finishBtn.disabled = true;
+
+      const name = playerName.value.trim();
+      if (!name) {
+        alert("Digite seu nome!");
+        return;
+      }
+
+      // Envia os dados para o PHP no InfinityFree
+      fetch("https://SEU_DOMINIO.infinityfreeapp.com/score_save.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: `name=${encodeURIComponent(name)}&time=${encodeURIComponent(time)}`
+      })
+      .then(response => response.text())
+      .then(data => {
+        alert("Pontuação salva com sucesso!");
+        console.log("Resposta do servidor:", data);
+      })
+      .catch(error => {
+        alert("Erro ao salvar pontuação.");
+        console.error("Erro:", error);
+      });
     });
   </script>
 </body>
