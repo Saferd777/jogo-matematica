@@ -2,19 +2,17 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Meu Jogo Scratch</title>
+  <title>Meu Jogo Scratch com Cronômetro</title>
   <style>
-    #cronometro {
-      font-size: 20px;
+    #timer {
+      font-size: 24px;
+      font-weight: bold;
       margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
-  <h1>Meu Jogo Scratch</h1>
-  
-  <div id="cronometro">Tempo: 0s</div>
-
+  <div id="timer">Tempo: 0 segundos</div>
   <iframe
     src="https://scratch.mit.edu/projects/1202806275/embed"
     allowtransparency="true"
@@ -26,15 +24,13 @@
   </iframe>
 
   <script>
-    let segundos = 0;
-    const cronometroElemento = document.getElementById('cronometro');
-
-    function atualizarCronometro() {
-      segundos++;
-      cronometroElemento.textContent = 'Tempo: ' + segundos + 's';
-    }
-
-    setInterval(atualizarCronometro, 1000);
+    let seconds = 0;
+    const timerElement = document.getElementById('timer');
+    
+    setInterval(() => {
+      seconds++;
+      timerElement.textContent = `Tempo: ${seconds} segundos`;
+    }, 1000);
   </script>
 </body>
 </html>
