@@ -5,14 +5,21 @@
   <title>Meu Jogo Scratch com Cronômetro</title>
   <style>
     #timer {
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 10px;
+      font-size: 2em;
+      margin-bottom: 20px;
     }
   </style>
 </head>
 <body>
+  <h1>Meu Jogo Scratch com Cronômetro</h1>
+  
   <div id="timer">Tempo: 0 segundos</div>
+  
+  <button id="startBtn">Começar</button>
+  <button id="resetBtn" disabled>Reiniciar</button>
+  
+  <br /><br />
+  
   <iframe
     src="https://scratch.mit.edu/projects/1202806275/embed"
     allowtransparency="true"
@@ -22,15 +29,33 @@
     scrolling="no"
     allowfullscreen>
   </iframe>
-
+  
   <script>
-    let seconds = 0;
-    const timerElement = document.getElementById('timer');
+    let timerDiv = document.getElementById('timer');
+    let startBtn = document.getElementById('startBtn');
+    let resetBtn = document.getElementById('resetBtn');
     
-    setInterval(() => {
-      seconds++;
-      timerElement.textContent = `Tempo: ${seconds} segundos`;
-    }, 1000);
+    let time = 0;
+    let interval = null;
+    
+    startBtn.addEventListener('click', () => {
+      if (interval) return; // já tá rodando
+      interval = setInterval(() => {
+        time++;
+        timerDiv.textContent = 'Tempo: ' + time + ' segundos';
+      }, 1000);
+      startBtn.disabled = true;
+      resetBtn.disabled = false;
+    });
+    
+    resetBtn.addEventListener('click', () => {
+      clearInterval(interval);
+      interval = null;
+      time = 0;
+      timerDiv.textContent = 'Tempo: 0 segundos';
+      startBtn.disabled = false;
+      resetBtn.disabled = true;
+    });
   </script>
 </body>
 </html>
