@@ -2,105 +2,87 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Jogo Matemática com Cronômetro</title>
-  <style>
-    #timer {
-      font-size: 2em;
-      margin: 10px 0;
+  <title>Ranking do Jogo</title>
+  <script type="module">
+    // Importa as funções do Firebase (coloque o Firebase SDK no seu projeto)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+    import { getDatabase, ref, push, onValue, query, orderByChild, limitToFirst } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBTV97AKCGhGMyOrr-WXVyFu3r3Wzd1aqo",
+      authDomain: "ranking-78322.firebaseapp.com",
+      databaseURL: "https://ranking-78322-default-rtdb.firebaseio.com",
+      projectId: "ranking-78322",
+      storageBucket: "ranking-78322.firebasestorage.app",
+      messagingSenderId: "908683382095",
+      appId: "1:908683382095:web:3284dddf71a954bd77493a",
+      measurementId: "G-EYQK732HD8"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Função para salvar score
+    window.salvarScore = function(nome, tempo) {
+      const scoresRef = ref(db, 'scores');
+      push(scoresRef, {
+        nome: nome,
+        tempo: tempo
+      });
+      alert('Score salvo com sucesso!');
     }
-    input, button {
-      font-size: 1em;
-      margin: 5px;
+
+    // Função para mostrar ranking
+    window.mostrarRanking = function() {
+      const scoresRef = ref(db, 'scores');
+      const scoresQuery = query(scoresRef, orderByChild('tempo'), limitToFirst(10));
+
+      onValue(scoresQuery, (snapshot) => {
+        const rankingDiv = document.getElementById('ranking');
+        rankingDiv.innerHTML = '<h2>Ranking dos melhores tempos</h2>';
+        const data = snapshot.val();
+
+        if (!data) {
+          rankingDiv.innerHTML += '<p>Nenhum score registrado ainda.</p>';
+          return;
+        }
+
+        const lista = document.createElement('ol');
+
+        for (const key in data) {
+          const item = data[key];
+          const li = document.createElement('li');
+          li.textContent = `${item.nome} - ${item.tempo.toFixed(2)} segundos`;
+          lista.appendChild(li);
+        }
+
+        rankingDiv.appendChild(lista);
+      });
     }
-  </style>
+  </script>
 </head>
 <body>
-  <h1>Jogo Matemática</h1>
+  <h1>Meu Jogo</h1>
 
-  <label for="playerName">Seu nome:</label>
-  <input type="text" id="playerName" placeholder="Digite seu nome" />
+  <!-- Aqui você pode colocar seu iframe do Scratch, ou o seu jogo -->
 
-  <div id="timer">Tempo: 0 segundos</div>
+  <div>
+    <label for="nomeInput">Seu nome:</label>
+    <input type="text" id="nomeInput" />
+  </div>
 
-  <button id="startBtn">Começar</button>
-  <button id="resetBtn" disabled>Reiniciar</button>
-  <button id="finishBtn" disabled>Finalizar</button>
+  <div>
+    <label for="tempoInput">Tempo (segundos):</label>
+    <input type="number" step="0.01" id="tempoInput" />
+  </div>
 
-  <br><br>
+  <button onclick="salvarScore(
+    document.getElementById('nomeInput').value, 
+    parseFloat(document.getElementById('tempoInput').value)
+  )">Salvar Score</button>
 
-  <iframe
-    src="https://scratch.mit.edu/projects/1202806275/embed"
-    allowtransparency="true"
-    width="485"
-    height="402"
-    frameborder="0"
-    scrolling="no"
-    allowfullscreen>
-  </iframe>
+  <button onclick="mostrarRanking()">Mostrar Ranking</button>
 
-  <script>
-    let time = 0;
-    let interval = null;
-
-    const timerDiv = document.getElementById('timer');
-    const startBtn = document.getElementById('startBtn');
-    const resetBtn = document.getElementById('resetBtn');
-    const finishBtn = document.getElementById('finishBtn');
-    const playerName = document.getElementById('playerName');
-
-    startBtn.addEventListener('click', () => {
-      if (!playerName.value.trim()) {
-        alert("Digite seu nome antes de começar!");
-        return;
-      }
-      if (interval) return;
-      interval = setInterval(() => {
-        time++;
-        timerDiv.textContent = 'Tempo: ' + time + ' segundos';
-      }, 1000);
-      startBtn.disabled = true;
-      resetBtn.disabled = false;
-      finishBtn.disabled = false;
-    });
-
-    resetBtn.addEventListener('click', () => {
-      clearInterval(interval);
-      interval = null;
-      time = 0;
-      timerDiv.textContent = 'Tempo: 0 segundos';
-      startBtn.disabled = false;
-      resetBtn.disabled = true;
-      finishBtn.disabled = true;
-    });
-
-    finishBtn.addEventListener('click', () => {
-      clearInterval(interval);
-      finishBtn.disabled = true;
-
-      const name = playerName.value.trim();
-      if (!name) {
-        alert("Digite seu nome!");
-        return;
-      }
-
-      // Envia os dados para o PHP no InfinityFree
-      fetch("https://SEU_DOMINIO.infinityfreeapp.com/score_save.php", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: `name=${encodeURIComponent(name)}&time=${encodeURIComponent(time)}`
-      })
-      .then(response => response.text())
-      .then(data => {
-        alert("Pontuação salva com sucesso!");
-        console.log("Resposta do servidor:", data);
-      })
-      .catch(error => {
-        alert("Erro ao salvar pontuação.");
-        console.error("Erro:", error);
-      });
-    });
-  </script>
+  <div id="ranking"></div>
 </body>
 </html>
