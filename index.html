@@ -136,3 +136,31 @@
   </script>
 </body>
 </html>
+<h2>Ranking (menor tempo)</h2>
+<ul id="rankingList">Carregando...</ul>
+
+<script>
+  function carregarRanking() {
+    fetch("score_get.php")
+      .then(res => res.json())
+      .then(data => {
+        const list = document.getElementById("rankingList");
+        list.innerHTML = "";
+        if (data.length === 0) {
+          list.innerHTML = "<li>Nenhum resultado ainda.</li>";
+          return;
+        }
+        data.forEach((jogador, index) => {
+          const item = document.createElement("li");
+          item.textContent = `${index + 1}. ${jogador.name} - ${jogador.time} segundos`;
+          list.appendChild(item);
+        });
+      })
+      .catch(err => {
+        document.getElementById("rankingList").innerHTML = "Erro ao carregar ranking.";
+        console.error("Erro:", err);
+      });
+  }
+
+  carregarRanking();
+</script>
