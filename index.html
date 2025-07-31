@@ -2,16 +2,10 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Jogo Matemática com Cronômetro</title>
+  <title>Jogo Matemática com Ranking</title>
   <style>
-    #timer {
-      font-size: 2em;
-      margin: 10px 0;
-    }
-    input, button {
-      font-size: 1em;
-      margin: 5px;
-    }
+    #timer { font-size: 2em; margin: 10px 0; }
+    input, button { font-size: 1em; margin: 5px; }
   </style>
 </head>
 <body>
@@ -27,7 +21,6 @@
   <button id="finishBtn" disabled>Finalizar</button>
 
   <br><br>
-
   <iframe
     src="https://scratch.mit.edu/projects/1202805110/embed"
     allowtransparency="true"
@@ -37,6 +30,9 @@
     scrolling="no"
     allowfullscreen>
   </iframe>
+
+  <h2>Ranking (Menor tempo)</h2>
+  <ol id="rankingList">Carregando...</ol>
 
   <script>
     let time = 0;
@@ -83,26 +79,40 @@
         return;
       }
 
-      // Envia os dados para o PHP no InfinityFree
-      fetch("https://SEU_DOMINIO.infinityfreeapp.com/score_save.php", {
+      fetch("score_save.php", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: `name=${encodeURIComponent(name)}&time=${encodeURIComponent(time)}`
       })
       .then(response => response.text())
       .then(data => {
         alert("Pontuação salva com sucesso!");
-        console.log("Resposta do servidor:", data);
+        loadRanking();
       })
       .catch(error => {
         alert("Erro ao salvar pontuação.");
         console.error("Erro:", error);
       });
     });
+
+    function loadRanking() {
+      fetch("score_get.php")
+        .then(response => response.json())
+        .then(data => {
+          const list = document.getElementById('rankingList');
+          list.innerHTML = '';
+          data.forEach(entry => {
+            const li = document.createElement('li');
+            li.textContent = `${entry.name} - ${entry.time} segundos`;
+            list.appendChild(li);
+          });
+        })
+        .catch(error => {
+          document.getElementById('rankingList').textContent = "Erro ao carregar ranking.";
+        });
+    }
+
+    window.onload = loadRanking;
   </script>
 </body>
 </html>
-
-
