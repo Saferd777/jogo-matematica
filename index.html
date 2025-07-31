@@ -1,113 +1,108 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8" />
-<title>Jogo com Ranking Firebase</title>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<style>
-  body { font-family: Arial, sans-serif; }
-  #ranking { margin-top: 20px; }
-</style>
+  <meta charset="UTF-8" />
+  <title>Jogo Matemática com Cronômetro</title>
+  <style>
+    #timer {
+      font-size: 2em;
+      margin: 10px 0;
+    }
+    input, button {
+      font-size: 1em;
+      margin: 5px;
+    }
+  </style>
 </head>
 <body>
+  <h1>Jogo Matemática</h1>
 
-<h1>Jogo com Ranking</h1>
+  <label for="playerName">Seu nome:</label>
+  <input type="text" id="playerName" placeholder="Digite seu nome" />
 
-<div>
-  <button id="startBtn">Iniciar Jogo</button>
-  <button id="finishBtn" disabled>Finalizar Jogo</button>
-  <p>Tempo: <span id="timer">0</span> segundos</p>
-</div>
+  <div id="timer">Tempo: 0 segundos</div>
 
-<div id="ranking">
-  <h2>Ranking</h2>
-  <ol id="rankingList"></ol>
-</div>
+  <button id="startBtn">Começar</button>
+  <button id="resetBtn" disabled>Reiniciar</button>
+  <button id="finishBtn" disabled>Finalizar</button>
 
-<script>
-// Cole aqui a configuração do seu Firebase, pegando do passo 3:
-const firebaseConfig = {
-  apiKey: "SEU_API_KEY",
-  authDomain: "SEU_AUTH_DOMAIN",
-  databaseURL: "SUA_DATABASE_URL",
-  projectId: "SEU_PROJECT_ID",
-  storageBucket: "SEU_STORAGE_BUCKET",
-  messagingSenderId: "SEU_MESSAGING_SENDER_ID",
-  appId: "SEU_APP_ID"
-};
+  <br><br>
 
-// Inicializa Firebase
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+  <iframe
+    src="https://scratch.mit.edu/projects/1202806275/embed"
+    allowtransparency="true"
+    width="485"
+    height="402"
+    frameborder="0"
+    scrolling="no"
+    allowfullscreen>
+  </iframe>
 
-let timerInterval;
-let tempo = 0;
+  <script>
+    let time = 0;
+    let interval = null;
 
-const timerEl = document.getElementById('timer');
-const startBtn = document.getElementById('startBtn');
-const finishBtn = document.getElementById('finishBtn');
+    const timerDiv = document.getElementById('timer');
+    const startBtn = document.getElementById('startBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const finishBtn = document.getElementById('finishBtn');
+    const playerName = document.getElementById('playerName');
 
-startBtn.onclick = () => {
-  tempo = 0;
-  timerEl.textContent = tempo;
-  startBtn.disabled = true;
-  finishBtn.disabled = false;
-  timerInterval = setInterval(() => {
-    tempo++;
-    timerEl.textContent = tempo;
-  }, 1000);
-};
-
-finishBtn.onclick = () => {
-  clearInterval(timerInterval);
-  finishBtn.disabled = true;
-  startBtn.disabled = false;
-  const nome = prompt("Qual é seu nome?");
-  if(!nome) {
-    alert("Você precisa digitar seu nome para salvar o tempo!");
-    return;
-  }
-  salvarTempo(nome, tempo);
-};
-
-function salvarTempo(nome, tempo) {
-  // salva no banco
-  const rankingRef = db.ref('ranking');
-  // cria um novo item com push()
-  rankingRef.push({
-    nome: nome,
-    tempo: tempo
-  }).then(() => {
-    alert("Tempo salvo!");
-    mostrarRanking();
-  }).catch((error) => {
-    alert("Erro ao salvar: " + error.message);
-  });
-}
-
-function mostrarRanking() {
-  const rankingRef = db.ref('ranking');
-  rankingRef.orderByChild('tempo').limitToFirst(10).once('value', snapshot => {
-    const rankingList = document.getElementById('rankingList');
-    rankingList.innerHTML = '';
-    if (!snapshot.exists()) {
-      rankingList.innerHTML = '<li>Nenhum registro ainda.</li>';
-      return;
-    }
-    snapshot.forEach(child => {
-      const item = child.val();
-      const li = document.createElement('li');
-      li.textContent = `${item.nome} - ${item.tempo} segundos`;
-      rankingList.appendChild(li);
+    startBtn.addEventListener('click', () => {
+      if (!playerName.value.trim()) {
+        alert("Digite seu nome antes de começar!");
+        return;
+      }
+      if (interval) return;
+      interval = setInterval(() => {
+        time++;
+        timerDiv.textContent = 'Tempo: ' + time + ' segundos';
+      }, 1000);
+      startBtn.disabled = true;
+      resetBtn.disabled = false;
+      finishBtn.disabled = false;
     });
-  });
-}
 
-// Mostra o ranking ao abrir a página
-mostrarRanking();
-</script>
+    resetBtn.addEventListener('click', () => {
+      clearInterval(interval);
+      interval = null;
+      time = 0;
+      timerDiv.textContent = 'Tempo: 0 segundos';
+      startBtn.disabled = false;
+      resetBtn.disabled = true;
+      finishBtn.disabled = true;
+    });
 
+    finishBtn.addEventListener('click', () => {
+      clearInterval(interval);
+      finishBtn.disabled = true;
+
+      const name = playerName.value.trim();
+      if (!name) {
+        alert("Digite seu nome!");
+        return;
+      }
+
+      // Envia os dados para o PHP no InfinityFree
+      fetch("https://SEU_DOMINIO.infinityfreeapp.com/score_save.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: `name=${encodeURIComponent(name)}&time=${encodeURIComponent(time)}`
+      })
+      .then(response => response.text())
+      .then(data => {
+        alert("Pontuação salva com sucesso!");
+        console.log("Resposta do servidor:", data);
+      })
+      .catch(error => {
+        alert("Erro ao salvar pontuação.");
+        console.error("Erro:", error);
+      });
+    });
+  </script>
 </body>
 </html>
+
 
