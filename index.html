@@ -1,88 +1,113 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <title>Ranking do Jogo</title>
-  <script type="module">
-    // Importa as funções do Firebase (coloque o Firebase SDK no seu projeto)
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-    import { getDatabase, ref, push, onValue, query, orderByChild, limitToFirst } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyBTV97AKCGhGMyOrr-WXVyFu3r3Wzd1aqo",
-      authDomain: "ranking-78322.firebaseapp.com",
-      databaseURL: "https://ranking-78322-default-rtdb.firebaseio.com",
-      projectId: "ranking-78322",
-      storageBucket: "ranking-78322.firebasestorage.app",
-      messagingSenderId: "908683382095",
-      appId: "1:908683382095:web:3284dddf71a954bd77493a",
-      measurementId: "G-EYQK732HD8"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    // Função para salvar score
-    window.salvarScore = function(nome, tempo) {
-      const scoresRef = ref(db, 'scores');
-      push(scoresRef, {
-        nome: nome,
-        tempo: tempo
-      });
-      alert('Score salvo com sucesso!');
-    }
-
-    // Função para mostrar ranking
-    window.mostrarRanking = function() {
-      const scoresRef = ref(db, 'scores');
-      const scoresQuery = query(scoresRef, orderByChild('tempo'), limitToFirst(10));
-
-      onValue(scoresQuery, (snapshot) => {
-        const rankingDiv = document.getElementById('ranking');
-        rankingDiv.innerHTML = '<h2>Ranking dos melhores tempos</h2>';
-        const data = snapshot.val();
-
-        if (!data) {
-          rankingDiv.innerHTML += '<p>Nenhum score registrado ainda.</p>';
-          return;
-        }
-
-        const lista = document.createElement('ol');
-
-        for (const key in data) {
-          const item = data[key];
-          const li = document.createElement('li');
-          li.textContent = `${item.nome} - ${item.tempo.toFixed(2)} segundos`;
-          lista.appendChild(li);
-        }
-
-        rankingDiv.appendChild(lista);
-      });
-    }
-  </script>
+<meta charset="UTF-8" />
+<title>Jogo com Ranking Firebase</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+  body { font-family: Arial, sans-serif; }
+  #ranking { margin-top: 20px; }
+</style>
 </head>
 <body>
-  <h1>Meu Jogo</h1>
 
-  <!-- Aqui você pode colocar seu iframe do Scratch, ou o seu jogo -->
+<h1>Jogo com Ranking</h1>
 
-  <div>
-    <label for="nomeInput">Seu nome:</label>
-    <input type="text" id="nomeInput" />
-  </div>
+<div>
+  <button id="startBtn">Iniciar Jogo</button>
+  <button id="finishBtn" disabled>Finalizar Jogo</button>
+  <p>Tempo: <span id="timer">0</span> segundos</p>
+</div>
 
-  <div>
-    <label for="tempoInput">Tempo (segundos):</label>
-    <input type="number" step="0.01" id="tempoInput" />
-  </div>
+<div id="ranking">
+  <h2>Ranking</h2>
+  <ol id="rankingList"></ol>
+</div>
 
-  <button onclick="salvarScore(
-    document.getElementById('nomeInput').value, 
-    parseFloat(document.getElementById('tempoInput').value)
-  )">Salvar Score</button>
+<script>
+// Cole aqui a configuração do seu Firebase, pegando do passo 3:
+const firebaseConfig = {
+  apiKey: "SEU_API_KEY",
+  authDomain: "SEU_AUTH_DOMAIN",
+  databaseURL: "SUA_DATABASE_URL",
+  projectId: "SEU_PROJECT_ID",
+  storageBucket: "SEU_STORAGE_BUCKET",
+  messagingSenderId: "SEU_MESSAGING_SENDER_ID",
+  appId: "SEU_APP_ID"
+};
 
-  <button onclick="mostrarRanking()">Mostrar Ranking</button>
+// Inicializa Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-  <div id="ranking"></div>
+let timerInterval;
+let tempo = 0;
+
+const timerEl = document.getElementById('timer');
+const startBtn = document.getElementById('startBtn');
+const finishBtn = document.getElementById('finishBtn');
+
+startBtn.onclick = () => {
+  tempo = 0;
+  timerEl.textContent = tempo;
+  startBtn.disabled = true;
+  finishBtn.disabled = false;
+  timerInterval = setInterval(() => {
+    tempo++;
+    timerEl.textContent = tempo;
+  }, 1000);
+};
+
+finishBtn.onclick = () => {
+  clearInterval(timerInterval);
+  finishBtn.disabled = true;
+  startBtn.disabled = false;
+  const nome = prompt("Qual é seu nome?");
+  if(!nome) {
+    alert("Você precisa digitar seu nome para salvar o tempo!");
+    return;
+  }
+  salvarTempo(nome, tempo);
+};
+
+function salvarTempo(nome, tempo) {
+  // salva no banco
+  const rankingRef = db.ref('ranking');
+  // cria um novo item com push()
+  rankingRef.push({
+    nome: nome,
+    tempo: tempo
+  }).then(() => {
+    alert("Tempo salvo!");
+    mostrarRanking();
+  }).catch((error) => {
+    alert("Erro ao salvar: " + error.message);
+  });
+}
+
+function mostrarRanking() {
+  const rankingRef = db.ref('ranking');
+  rankingRef.orderByChild('tempo').limitToFirst(10).once('value', snapshot => {
+    const rankingList = document.getElementById('rankingList');
+    rankingList.innerHTML = '';
+    if (!snapshot.exists()) {
+      rankingList.innerHTML = '<li>Nenhum registro ainda.</li>';
+      return;
+    }
+    snapshot.forEach(child => {
+      const item = child.val();
+      const li = document.createElement('li');
+      li.textContent = `${item.nome} - ${item.tempo} segundos`;
+      rankingList.appendChild(li);
+    });
+  });
+}
+
+// Mostra o ranking ao abrir a página
+mostrarRanking();
+</script>
+
 </body>
 </html>
+
