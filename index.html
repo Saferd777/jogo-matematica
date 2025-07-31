@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <title>Jogo Matemática com Cronômetro</title>
   <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
     #timer {
       font-size: 2em;
       margin: 10px 0;
@@ -11,9 +16,11 @@
     input, button {
       font-size: 1em;
       margin: 5px;
+      padding: 5px 10px;
     }
-    #ranking {
-      margin-top: 30px;
+    #rankingList {
+      list-style: none;
+      padding: 0;
     }
   </style>
 </head>
@@ -41,12 +48,8 @@
     allowfullscreen>
   </iframe>
 
-  <div id="ranking">
-    <h2>Ranking (menor tempo)</h2>
-    <ol id="rankingList">
-      <li>Carregando...</li>
-    </ol>
-  </div>
+  <h2>Ranking (menor tempo)</h2>
+  <ul id="rankingList">Carregando...</ul>
 
   <script>
     let time = 0;
@@ -85,6 +88,7 @@
 
     finishBtn.addEventListener('click', () => {
       clearInterval(interval);
+      interval = null;
       finishBtn.disabled = true;
 
       const name = playerName.value.trim();
@@ -93,7 +97,6 @@
         return;
       }
 
-      // Envia pontuação para o servidor
       fetch("score_save.php", {
         method: "POST",
         headers: {
@@ -105,7 +108,7 @@
       .then(data => {
         alert("Pontuação salva com sucesso!");
         console.log("Resposta do servidor:", data);
-        loadRanking(); // Atualiza o ranking após salvar
+        carregarRanking();
       })
       .catch(error => {
         alert("Erro ao salvar pontuação.");
@@ -113,54 +116,29 @@
       });
     });
 
-    // Carrega o ranking do servidor
-    function loadRanking() {
+    function carregarRanking() {
       fetch("score_get.php")
-        .then(response => response.json())
+        .then(res => res.json())
         .then(data => {
-          const list = document.getElementById('rankingList');
-          list.innerHTML = '';
-          data.forEach(entry => {
-            const li = document.createElement('li');
-            li.textContent = `${entry.name} - ${entry.time} segundos`;
-            list.appendChild(li);
+          const list = document.getElementById("rankingList");
+          list.innerHTML = "";
+          if (data.length === 0) {
+            list.innerHTML = "<li>Nenhum resultado ainda.</li>";
+            return;
+          }
+          data.forEach((jogador, index) => {
+            const item = document.createElement("li");
+            item.textContent = `${index + 1}. ${jogador.name} - ${jogador.time} segundos`;
+            list.appendChild(item);
           });
         })
-        .catch(error => {
-          document.getElementById('rankingList').textContent = "Erro ao carregar ranking.";
-          console.error("Erro ao carregar ranking:", error);
+        .catch(err => {
+          document.getElementById("rankingList").innerHTML = "Erro ao carregar ranking.";
+          console.error("Erro:", err);
         });
     }
 
-    window.onload = loadRanking;
+    carregarRanking(); // Carrega ao abrir o site
   </script>
 </body>
 </html>
-<h2>Ranking (menor tempo)</h2>
-<ul id="rankingList">Carregando...</ul>
-
-<script>
-  function carregarRanking() {
-    fetch("score_get.php")
-      .then(res => res.json())
-      .then(data => {
-        const list = document.getElementById("rankingList");
-        list.innerHTML = "";
-        if (data.length === 0) {
-          list.innerHTML = "<li>Nenhum resultado ainda.</li>";
-          return;
-        }
-        data.forEach((jogador, index) => {
-          const item = document.createElement("li");
-          item.textContent = `${index + 1}. ${jogador.name} - ${jogador.time} segundos`;
-          list.appendChild(item);
-        });
-      })
-      .catch(err => {
-        document.getElementById("rankingList").innerHTML = "Erro ao carregar ranking.";
-        console.error("Erro:", err);
-      });
-  }
-
-  carregarRanking();
-</script>
